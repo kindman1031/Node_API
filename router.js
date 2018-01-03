@@ -7,20 +7,10 @@ const weatherController = require('./controllers/weather');
 
 const apiRoutes = express.Router();
 const weatherRoutes = express.Router();
-const pg = require('pg');
-
-pg.defaults.ssl = true;
-
-var dbString = process.env.DATABASE_URL;
-
-var sharedPgClient;
-
-pg.connect(dbString, function (err, client) {
-    if (err) {
-        console.error("PG Connection Error")
-    }
-    console.log("Connected to Postgres");
-    sharedPgClient = client;
+const { Client } = require('pg');
+const client = new Client({
+    connectionString: "postgres://rtssexxqlejgxq:483ed4cf39b88348172f5c96733670dd963c08b36970d084ea6943b263f9de14@ec2-54-243-61-173.compute-1.amazonaws.com:5432/dfjo1u1s37m18m",
+    ssl: true,
 });
 
 
@@ -32,15 +22,18 @@ module.exports = function (app) {
     });
     app.post('/login', (req, res) => {
         const { email, password } = req.body;
+        client.connect();
         // You can use DB checking here
         // req.getConnection(function (err, connection) {
-        sharedPgClient.query('SELECT * FROM users where email = "' + email + '" and password = "' + password + '"', function (err, rows) {
+        client.query("SELECT * FROM users where email = '" + email + "' and password = '" + password + "'", function (err, rows) {
             if (err) throw err
-            if (rows[0]) {
+            if (rows.rows[0]) {
                 var token = jsonwebtoken.sign({ email: email }, secretKey);
+                client.end();
                 res.send({ token: token, user: req.body });
             }
             else {
+                client.end();
                 res.send({ error: 'Not found' });
             }
         });
@@ -54,9 +47,11 @@ module.exports = function (app) {
 
         // req.getConnection(function (err, connection) {
         const data = input;
-        sharedPgClient.query("INSERT INTO users set ? ", data, function (err, rows) {
+        client.connect();
+        client.query("INSERT INTO users(email, password, fullname) VALUES($1, $2, $3)", [req.body.email, req.body.password, req.body.email,], function (err, rows) {
             if (err) throw err;
             data.id = parseInt(rows.insertId);
+            client.end();
             res.json(data)
         });
         // });
