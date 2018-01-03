@@ -24,6 +24,7 @@
     "express-myconnection": "^1.0.4",
     "jsonwebtoken": "^8.0.1",
     "mysql": "^2.15.0",
+    "pg": "7.4.0",
     "smartsheet": "^1.0.3"
   },
   "devDependencies": {
