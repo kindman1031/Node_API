@@ -7,10 +7,20 @@ const weatherController = require('./controllers/weather');
 
 const apiRoutes = express.Router();
 const weatherRoutes = express.Router();
-const { Client } = require('pg');
-const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: true,
+const pg = require('pg');
+
+pg.defaults.ssl = true;
+
+var dbString = process.env.DATABASE_URL;
+
+var sharedPgClient;
+
+pg.connect(dbString, function (err, client) {
+    if (err) {
+        console.error("PG Connection Error")
+    }
+    console.log("Connected to Postgres");
+    sharedPgClient = client;
 });
 
 
@@ -22,18 +32,15 @@ module.exports = function (app) {
     });
     app.post('/login', (req, res) => {
         const { email, password } = req.body;
-        client.connect();
         // You can use DB checking here
         // req.getConnection(function (err, connection) {
-        client.query('SELECT * FROM users where email = "' + email + '" and password = "' + password + '"', function (err, rows) {
+        sharedPgClient.query('SELECT * FROM users where email = "' + email + '" and password = "' + password + '"', function (err, rows) {
             if (err) throw err
             if (rows[0]) {
                 var token = jsonwebtoken.sign({ email: email }, secretKey);
-                client.end();
                 res.send({ token: token, user: req.body });
             }
             else {
-                client.end();
                 res.send({ error: 'Not found' });
             }
         });
@@ -47,11 +54,9 @@ module.exports = function (app) {
 
         // req.getConnection(function (err, connection) {
         const data = input;
-        client.connect();
-        client.query("INSERT INTO users set ? ", data, function (err, rows) {
+        sharedPgClient.query("INSERT INTO users set ? ", data, function (err, rows) {
             if (err) throw err;
             data.id = parseInt(rows.insertId);
-            client.end();
             res.json(data)
         });
         // });
