@@ -29,11 +29,9 @@ module.exports = function (app) {
             if (err) throw err
             if (rows.rows[0]) {
                 var token = jsonwebtoken.sign({ email: email }, secretKey);
-                client.end();
                 res.send({ token: token, user: req.body });
             }
             else {
-                client.end();
                 res.send({ error: 'Not found' });
             }
         });
@@ -51,7 +49,6 @@ module.exports = function (app) {
         client.query("INSERT INTO users(email, password, fullname) VALUES($1, $2, $3)", [req.body.email, req.body.password, req.body.email,], function (err, rows) {
             if (err) throw err;
             data.id = parseInt(rows.insertId);
-            client.end();
             res.json(data)
         });
         // });
