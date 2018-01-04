@@ -54,10 +54,10 @@ exports.save = function (req, res) {
     // req.getConnection(function (err, connection) {
     const data = input;
     client.connect();
-    client.query("INSERT INTO weather(country, state, snow, wind, seismic1, seismic2) VALUES($1, $2, $3, $4, $5, $6)", [req.body.country, req.body.state, req.body.snow, req.body.wind, req.body.seismic1, req.body.seismic2], function (err, rows) {
+    client.query("INSERT INTO weather(country, state, snow, wind, seismic1, seismic2) VALUES($1, $2, $3, $4, $5, $6) RETURNING id", [req.body.country, req.body.state, req.body.snow, req.body.wind, req.body.seismic1, req.body.seismic2], function (err, rows) {
         if (err) throw err;
         console.log(rows)
-        data.id = parseInt(rows.rows.insertId);
+        data.id = rows.rows[0].id;
         res.json(data)
     });
     // });
